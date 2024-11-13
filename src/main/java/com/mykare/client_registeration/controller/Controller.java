@@ -1,10 +1,10 @@
 package com.mykare.client_registeration.controller;
 
 import com.mykare.client_registeration.entity.User;
+import com.mykare.client_registeration.model.CommonResponse;
 import com.mykare.client_registeration.model.UserDelete;
 import com.mykare.client_registeration.model.UserValidate;
 import com.mykare.client_registeration.service.UserService;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,21 +24,13 @@ public class Controller {
     UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> saveUser(@Validated @RequestBody User user, BindingResult bindingResult) throws Exception {
-        try{
-
-            if (bindingResult.hasErrors()) {
-                StringBuilder errorMessages = new StringBuilder();
-                bindingResult.getAllErrors().forEach(error -> errorMessages.append(error.getDefaultMessage()).append(" "));
-                return createResponse(001, errorMessages.toString());
-            }
-        userService.saveUser(user);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Please ensure the data is correct");
-        }catch (Exception e){
-            throw new Exception("Server encountered an error" + e);
+    public CommonResponse saveUser(@RequestBody User user) {
+        CommonResponse validationResponse = validateUserDetails(user);
+        if (validationResponse.getStatus() != 200) {
+            return validationResponse;
         }
-        return createResponse(200,"client registered successfully");
+
+        return userService.saveUser(user);
     }
 
     @PostMapping("/delete")
@@ -53,10 +45,6 @@ public class Controller {
         }
         return createResponse(200,"User deleted");
     }
-
-
-
-
 
     @PostMapping("/validate")
     public ResponseEntity<Map<String, Object>>validateUser(@Validated @RequestBody  UserValidate userValidate,BindingResult bindingResult) throws Exception {
@@ -81,14 +69,32 @@ public class Controller {
     @GetMapping("/getClients")
     public ResponseEntity<List<User>> getAllClients() {
         List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);  // Return a list of users as the response body
+        return ResponseEntity.ok(users);
     }
-    public ResponseEntity<Map<String, Object>> createResponse(int status,String message) {
+    private ResponseEntity<Map<String, Object>> createResponse(int status,String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("status", status);
         response.put("message", message);
-//        response.put("data", data);
         return ResponseEntity.ok(response);
+    }
+    private CommonResponse validateUserDetails(User user) {
+        if (user.getUsername() == null || user.getUsername().isEmpty()) {
+            return new CommonResponse(400, "Username cannot be null or empty.");
+        }
+        if (!isValidPassword(user.getPassword())) {
+            return new CommonResponse(400, "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character.");
+        }
+        if (user.getGender() == null || user.getGender().isEmpty()) {
+            return new CommonResponse(400, "Gender cannot be null or empty.");
+        }
+        if (user.getEmail() == null || user.getEmail().isEmpty()) {
+            return new CommonResponse(400, "Email cannot be null or empty.");
+        }
+        return new CommonResponse(200, "Validation successful.");
+    }
+    private boolean isValidPassword(String password) {
+        String passwordPattern = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$";
+        return password != null && password.matches(passwordPattern);
     }
 }
 

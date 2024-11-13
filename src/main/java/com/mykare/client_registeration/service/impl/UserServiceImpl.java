@@ -1,18 +1,19 @@
 package com.mykare.client_registeration.service.impl;
 
 import com.mykare.client_registeration.entity.User;
+import com.mykare.client_registeration.model.CommonResponse;
 import com.mykare.client_registeration.model.UserValidate;
 import com.mykare.client_registeration.repository.UserRepository;
 import com.mykare.client_registeration.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -22,37 +23,36 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public ResponseEntity<String> saveUser(User user) {
+    public CommonResponse saveUser(User user) {
         try {
             userRepository.save(user);
+            return new CommonResponse(200, "User registered successfully.");
         } catch (DataIntegrityViolationException ex) {
             log.error("Data exception: " + ex.getMessage());
-            throw new IllegalArgumentException("Email already exists. Please use a different email.");
+            return new CommonResponse(400, "Email already exists. Please use a different email.");
         } catch (Exception ex) {
             log.error("Exception caught: " + ex.getMessage());
-//            return ResponseEntity.ok(ex.getMessage());
+            return new CommonResponse(500, "Server encountered an error: " + ex.getMessage());
         }
-        return ResponseEntity.ok("Saved");
     }
-
     public void deleteUser(String email) {
 //        Optional<User> userOptional = userRepository.findByEmail(email);
-        User userdet=userRepository.findByEmail(email);
-//        if (!userdet.isPresent()) {
-        if (userdet==null) {
+        User userDetails = userRepository.findByEmail(email);
+//        if (!userDetails.isPresent()) {
+        if (userDetails == null) {
             throw new IllegalArgumentException("No user found with this email :: " + email );
         }
 //        User user = new User();
-//        user = userdet.get();
-        log.info("user id : " + userdet.getId());
-        userRepository.deleteById(userdet.getId());
+//        user = userDetails.get();
+        log.info("user id : " + userDetails.getId());
+        userRepository.deleteById(userDetails.getId());
     }
 
     public boolean validate(UserValidate user) {
 
-        User userdet = userRepository.findByEmail(user.getEmail());
-        if (userdet != null) {
-            return userdet.getPassword().equals(user.getPassword());
+        User userDetails = userRepository.findByEmail(user.getEmail());
+        if (userDetails != null) {
+            return userDetails.getPassword().equals(user.getPassword());
         }
         return false;
     }
@@ -61,4 +61,5 @@ public class UserServiceImpl implements UserService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
 }
