@@ -15,11 +15,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @RestController
 @RequestMapping("/rest")
 public class Controller {
+
+    private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+    private static final Pattern pattern = Pattern.compile(EMAIL_REGEX);
     @Autowired
     UserService userService;
 
@@ -47,20 +52,20 @@ public class Controller {
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<Map<String, Object>>validateUser(@Validated @RequestBody  UserValidate userValidate,BindingResult bindingResult) throws Exception {
+    public CommonResponse validateUser(@Validated @RequestBody  UserValidate userValidate,BindingResult bindingResult) throws Exception {
         try {
-
-            if (bindingResult.hasErrors()) {
-                StringBuilder errorMessages = new StringBuilder();
-                bindingResult.getAllErrors().forEach(error -> errorMessages.append(error.getDefaultMessage()).append(" "));
-                return createResponse(001, errorMessages.toString());
-            }
-            boolean isValid = userService.validate(userValidate);
-            if (isValid) {
-                return createResponse(200, "Success");
-            } else {
-                return createResponse(1001, "invalid credentials");
-            }
+//
+//            if (bindingResult.hasErrors()) {
+//                StringBuilder errorMessages = new StringBuilder();
+//                bindingResult.getAllErrors().forEach(error -> errorMessages.append(error.getDefaultMessage()).append(" "));
+//                return createResponse(001, errorMessages.toString());
+//            }
+            return userService.validate(userValidate);
+//            if (isValid) {
+//                return createResponse(200, "Success");
+//            } else {
+//                return createResponse(1001, "invalid credentials");
+//            }
         }catch(Exception ex){
             throw new Exception("Server encountered an error" + ex);
         }
@@ -87,10 +92,20 @@ public class Controller {
         if (user.getGender() == null || user.getGender().isEmpty()) {
             return new CommonResponse(400, "Gender cannot be null or empty.");
         }
-        if (user.getEmail() == null || user.getEmail().isEmpty()) {
-            return new CommonResponse(400, "Email cannot be null or empty.");
+        if (user.getEmail() == null || user.getEmail().isEmpty()||!isValidEmail(user.getEmail())) {
+            return new CommonResponse(400, "Email cannot be null,empty or invalid.");
         }
         return new CommonResponse(200, "Validation successful.");
+    }
+
+
+
+    public static boolean isValidEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            return false;
+        }
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
     }
     private boolean isValidPassword(String password) {
         String passwordPattern = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$";

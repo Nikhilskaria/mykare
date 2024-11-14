@@ -10,6 +10,6 @@ public class UserValidate {
 
     private String email;
 
-    @NotBlank(message = "Password cannot be empty")
+//    @NotBlank(message = "Password cannot be empty")
     private String password;
 }

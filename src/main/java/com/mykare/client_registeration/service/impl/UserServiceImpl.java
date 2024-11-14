@@ -48,13 +48,18 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(userDetails.getId());
     }
 
-    public boolean validate(UserValidate user) {
-
+    public CommonResponse validate(UserValidate user) {
         User userDetails = userRepository.findByEmail(user.getEmail());
-        if (userDetails != null) {
-            return userDetails.getPassword().equals(user.getPassword());
+
+        if (userDetails == null) {
+            return new CommonResponse(404, "User not found.");
         }
-        return false;
+
+        if (userDetails.getPassword().equals(user.getPassword())) {
+            return new CommonResponse(200, "Validation successful.");
+        } else {
+            return new CommonResponse(401, "Invalid credentials.");
+        }
     }
 
     @Override

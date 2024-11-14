@@ -10,7 +10,7 @@ import java.util.List;
 public interface UserService{
     CommonResponse saveUser(User user);
      void deleteUser(String email);
-    boolean validate(UserValidate user);
+    CommonResponse validate(UserValidate user);
 
     List<User> getAllUsers();
 }
